@@ -9,7 +9,9 @@ const baseConfig = {
   port: 3000,
   secrets: {
     jwt: 'test',
-    jwtExp: '60',
+    jwtRef: 'test2',
+    jwtExp: '61000',
+    jwtRefExp: '30d',
   },
 };
 

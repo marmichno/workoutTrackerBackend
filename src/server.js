@@ -9,7 +9,7 @@ import configurationRouter from './resources/configuration/configuration.router.
 
 // db
 import { connect } from './utils/db.js';
-import { signin, signup, protect } from './utils/auth.js';
+import { signin, signup, protect, refreshToken } from './utils/auth.js';
 
 const { json, urlencoded } = pkg;
 export const app = express();
@@ -22,6 +22,7 @@ app.use(urlencoded({ extended: true }));
 app.use(morgan('dev'));
 app.post('/signup', signup);
 app.post('/signin', signin);
+app.post('/authorization/refreshToken', refreshToken);
 app.use('/api', protect);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/configuration', configurationRouter);

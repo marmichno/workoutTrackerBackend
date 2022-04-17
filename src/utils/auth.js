@@ -1,11 +1,20 @@
 import config from '../config/index.js';
 import { User } from '../resources/user/user.model.js';
 import jwt from 'jsonwebtoken';
+import { saveToken, removeToken } from '../resources/token/session.utils.js';
+import mongoose from 'mongoose';
+
+const toId = mongoose.Types.ObjectId;
 
 export const newToken = (user) => {
-  console.log(user.id);
   return jwt.sign({ id: user.id }, config.secrets.jwt, {
     expiresIn: config.secrets.jwtExp,
+  });
+};
+
+export const newRefToken = (user) => {
+  return jwt.sign({ id: user.id }, config.secrets.jwtRef, {
+    expiresIn: config.secrets.jwtRefExp,
   });
 };
 
@@ -23,6 +32,59 @@ export const verifyToken = (token) =>
       };
     }
   });
+
+export const verifyRefreshToken = (token) =>
+  jwt.verify(token, config.secrets.jwtRef, (err, payload) => {
+    if (err) {
+      return {
+        errorMessage: err.message,
+        payload: {},
+      };
+    } else {
+      return {
+        errorMessage: '',
+        payload: payload,
+      };
+    }
+  });
+
+export const refreshToken = async (req, res) => {
+  if (!req.body.token) {
+    return res.status(401).send({ message: 'wrong request' });
+  }
+
+  let token = req.body.token;
+
+  try {
+    const payload = verifyRefreshToken(token);
+
+    if (payload.errorMessage) {
+      return res.status(401).end();
+    }
+
+    const removedToken = await removeToken(req.body.token);
+
+    if (!removedToken) {
+      return res.status(401).end();
+    }
+
+    const refreshToken = newToken(payload);
+    const refreshRefToken = newRefToken(payload);
+
+    const createdToken = await saveToken(toId(payload.id), refreshRefToken);
+
+    if (!createdToken) {
+      return res.status(401).end();
+    }
+
+    return res
+      .status(201)
+      .send({ token: refreshToken, refreshToken: refreshRefToken });
+  } catch (e) {
+    console.error(e);
+    res.status(401).end();
+  }
+};
 
 export const signup = async (req, res) => {
   if (!req.body.email || !req.body.password || !req.body.nickname) {
@@ -56,7 +118,14 @@ export const signin = async (req, res) => {
       return res.status(401).send({ message: 'Not authorized' });
     }
     const token = newToken(user);
-    return res.status(200).send({ token });
+    const refreshToken = newRefToken(user);
+    const savedToken = await saveToken(user._id, refreshToken);
+
+    if (!savedToken) {
+      return res.status(401).send({ message: 'token is not saved' });
+    }
+
+    return res.status(200).send({ token: token, refreshToken: refreshToken });
   } catch (e) {
     console.error(e);
     return res.status(401).send({ message: 'Not authorized' });
@@ -81,7 +150,6 @@ export const protect = async (req, res, next) => {
         return res.status(401).end();
       }
     }
-    console.log(payload);
     const user = await User.findById(payload.id)
       .select('-password')
       .lean()
