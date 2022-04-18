@@ -97,7 +97,7 @@ export const signup = async (req, res) => {
     return res.status(201).send({ message: 'user created' });
   } catch (e) {
     console.error(e);
-    return res.status(400).end();
+    return res.status(400).send({ message: e.message });
   }
 };
 

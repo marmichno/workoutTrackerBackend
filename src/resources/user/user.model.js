@@ -30,6 +30,25 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+userSchema.post('save', function (error, doc, next) {
+  const fieldFail = Object.keys(error.keyPattern)[0];
+  if (
+    fieldFail === 'nickname' &&
+    error.name === 'MongoServerError' &&
+    error.code === 11000
+  ) {
+    next(new Error('Nickname already in use'));
+  } else if (
+    fieldFail === 'email' &&
+    error.name === 'MongoServerError' &&
+    error.code === 11000
+  ) {
+    next(new Error('Email already in use'));
+  } else {
+    next();
+  }
+});
+
 userSchema.pre('save', function (next) {
   if (!this.isModified('password')) {
     return next();
