@@ -109,26 +109,30 @@ export const signin = async (req, res) => {
   const user = await User.findOne({ email: req.body.email }).exec();
 
   if (!user) {
-    return res.status(401).send({ message: 'Not authorized' });
+    return res.status(401).send({ message: 'Wrong email or password' });
   }
 
   try {
     const match = await user.checkPassword(req.body.password);
     if (!match) {
-      return res.status(401).send({ message: 'Not authorized' });
+      return res.status(401).send({ message: 'Wrong email or password' });
     }
     const token = newToken(user);
     const refreshToken = newRefToken(user);
     const savedToken = await saveToken(user._id, refreshToken);
 
     if (!savedToken) {
-      return res.status(401).send({ message: 'token is not saved' });
+      return res.status(401).send({ message: 'Something went wrong' });
     }
 
-    return res.status(200).send({ token: token, refreshToken: refreshToken });
+    return res.status(200).send({
+      token: token,
+      refreshToken: refreshToken,
+      userNickname: user.nickname,
+    });
   } catch (e) {
     console.error(e);
-    return res.status(401).send({ message: 'Not authorized' });
+    return res.status(401).send({ message: 'Something went wrong' });
   }
 };
 
