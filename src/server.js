@@ -4,8 +4,7 @@ import morgan from 'morgan';
 import cors from 'cors';
 
 // routers
-import categoriesRouter from './resources/categories/categories.router.js';
-import configurationRouter from './resources/configuration/configuration.router.js';
+import exercisesRouter from './resources/exercise/exercise.router.js';
 
 // db
 import { connect } from './utils/db.js';
@@ -23,9 +22,8 @@ app.use(morgan('dev'));
 app.post('/signup', signup);
 app.post('/signin', signin);
 app.post('/authorization/refreshToken', refreshToken);
-app.use('/api', protect);
-app.use('/api/categories', categoriesRouter);
-app.use('/api/configuration', configurationRouter);
+app.use('/dashboard/', protect);
+app.use('/dashboard/exercises', exercisesRouter);
 
 export const startServer = async () => {
   try {

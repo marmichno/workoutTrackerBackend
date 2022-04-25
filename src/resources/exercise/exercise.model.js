@@ -5,8 +5,14 @@ const exerciseSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  createdBy: {
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: 'user',
+    required: true,
+  },
   muscleGroup: {
     type: String,
+    required: true,
   },
   description: {
     type: String,

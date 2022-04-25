@@ -68,10 +68,17 @@ export const refreshToken = async (req, res) => {
       return res.status(401).end();
     }
 
-    const refreshToken = newToken(payload);
-    const refreshRefToken = newRefToken(payload);
+    const user = {
+      id: toId(payload.payload.id),
+    };
 
-    const createdToken = await saveToken(toId(payload.id), refreshRefToken);
+    const refreshToken = newToken(user);
+    const refreshRefToken = newRefToken(user);
+
+    const createdToken = await saveToken(
+      toId(payload.payload.id),
+      refreshRefToken
+    );
 
     if (!createdToken) {
       return res.status(401).end();
@@ -128,7 +135,6 @@ export const signin = async (req, res) => {
     return res.status(200).send({
       token: token,
       refreshToken: refreshToken,
-      userNickname: user.nickname,
     });
   } catch (e) {
     console.error(e);
@@ -154,7 +160,7 @@ export const protect = async (req, res, next) => {
         return res.status(401).end();
       }
     }
-    const user = await User.findById(payload.id)
+    const user = await User.findById(payload.payload.id)
       .select('-password')
       .lean()
       .exec();
